@@ -1,0 +1,2 @@
+-- 03_indexes.sql
+-- Purpose: Create indexes to optimize query performance.

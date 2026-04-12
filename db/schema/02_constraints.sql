@@ -1,0 +1,2 @@
+-- 02_constraints.sql
+-- Purpose: Add foreign keys, unique constraints, and check constraints.

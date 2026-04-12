@@ -1,0 +1,10 @@
+node_modules/
+.env
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+*.csv
+dist/
+build/
+__pycache__/

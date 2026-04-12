@@ -1,0 +1,2 @@
+-- 01_create_tables.sql
+-- Purpose: Create all tables for the Movie Insights database.

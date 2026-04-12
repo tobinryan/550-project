@@ -1,0 +1,2 @@
+-- load_data.sql
+-- Purpose: Bulk-load cleaned CSV data into PostgreSQL tables.
