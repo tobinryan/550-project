@@ -213,17 +213,19 @@ def clean_movies(
 
     # trim str columns
     for col in movies.select_dtypes(include="object").columns:
-        movies[col] = movies[col].str.strip()
+        movies[col] = movies[col].where(movies[col].isna(), movies[col].astype(str).str.strip())
 
     # genres: union TMDB dicts + IMDb string list
     genre_rows = []
     for _, row in merged.iterrows():
         # TMDB: [{"name": "..."}]; IMDb: ["Action", "Drama", ...]
         genre_names = set()
-        for g in row.get("genres_raw", []):
+        genres_raw = row.get("genres_raw", [])
+        imdb_genres = row.get("imdb_genres", [])
+        for g in (genres_raw if isinstance(genres_raw, list) else []):
             if isinstance(g, dict) and "name" in g:
                 genre_names.add(g["name"].strip())
-        for g in row.get("imdb_genres", []):
+        for g in (imdb_genres if isinstance(imdb_genres, list) else []):
             if g and g != "\\N":
                 genre_names.add(g.strip())
 
