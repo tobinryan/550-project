@@ -1,7 +1,3 @@
--- Query 4: Actor Pairs with Shared Movies Ranked by Average Rating
---
--- Find pairs of actors who have appeared together in at least 3 movies, and rank those pairs by the average rating of their shared movies.
---
 SELECT
     LEAST(mc1.actor_id, mc2.actor_id) AS actor1_id,
     GREATEST(mc1.actor_id, mc2.actor_id) AS actor2_id,
