@@ -1,13 +1,18 @@
 """Put IDs together: IMDb uses tt..., TMDB and MovieLens use their own ints.
 
-Helpers below build lookups and can add missing ids to a frame that already has one of them.
+``links.csv`` lives next to ``ratings.csv`` in *The Movies Dataset* download.
 """
 
+import sys
 from pathlib import Path
 
 import pandas as pd
 
-RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
+_PIPELINE_DIR = Path(__file__).resolve().parent
+if str(_PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(_PIPELINE_DIR))
+
+from paths import MOVIES_DATASET_DIR
 
 
 def _coerce_int(series: pd.Series) -> pd.Series:
@@ -17,7 +22,7 @@ def _coerce_int(series: pd.Series) -> pd.Series:
 def build_id_mapping(links_path: Path | None = None) -> pd.DataFrame:
     """Read links.csv into ml_movie_id, imdb_id (tt...), tmdb_id."""
     if links_path is None:
-        links_path = RAW_DIR / "ml-latest" / "links.csv"
+        links_path = MOVIES_DATASET_DIR / "links.csv"
 
     df = pd.read_csv(links_path)
     df.rename(

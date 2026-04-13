@@ -1,38 +1,48 @@
-# Movie Insights
+# Movie analytics & discovery (CIS 5500)
 
-A web application for exploring movies, actors, and ratings built on integrated movie datasets (TMDB, IMDb, MovieLens).
-
-## Team
-
-- Ryan Tobin
-- Zachary Harpaz
-- Aaron Meslin
-- Maximilian Chuang
+A movie analytics and discovery platform for exploring relationships between movies, actors, and audience ratings. The app integrates metadata and user ratings from **The Movies Dataset** (MovieLens + TMDB) with actor information from the **IMDb Actors and Movies** Kaggle dataset so users can search movies and actors, inspect cast and financials, and use analytics dashboards for trends over time.
 
 **Course:** CIS 5500 — University of Pennsylvania
 
-## Tech Stack
+## Team
+
+| Name            | Email                     | GitHub       |
+|-----------------|---------------------------|--------------|
+| Ryan Tobin      | tobinry@seas.upenn.edu    | tobinryan    |
+| Zachary Harpaz  | zharpaz@seas.upenn.edu    | zachharpaz   |
+| Maximilian Chuang | mchuang1@seas.upenn.edu | mxchng       |
+| Aaron Meslin    | aameslin@seas.upenn.edu   | AaronMeslin  |
+
+## Planned experience
+
+- Movie search and detail (cast, release, budget, revenue, ratings).
+- Actor profile pages.
+- Analytics dashboards (genres, profitability, ratings over time).
+
+**Data discovery notebook:** [Google Colab](https://colab.research.google.com/drive/1XyEJrp5QuiuXzByjibBRxAT0h4qPq8bI?usp=sharing)
+
+## Tech stack
 
 - **Database:** PostgreSQL (AWS RDS)
 - **Backend:** Node.js / Express
 - **Frontend:** React
-- **Data Pipeline:** Python (pandas, psycopg2)
+- **Data pipeline:** Python (pandas, psycopg2); raw data from Kaggle (`kagglehub` or Kaggle API)
 
-## Directory Layout
+## Directory layout
 
-| Directory    | Description                                                  |
-|--------------|--------------------------------------------------------------|
-| `docs/`      | Schema normalization proofs, data source documentation       |
-| `data/`      | Raw and processed dataset files (not committed to git)       |
-| `db/`        | SQL schema, queries, loading scripts, connection info        |
-| `pipeline/`  | Python scripts for cleaning and integrating datasets         |
-| `server/`    | Node/Express API server                                      |
-| `client/`    | React frontend application                                   |
+| Directory   | Description                                            |
+|-------------|--------------------------------------------------------|
+| `docs/`     | Schema notes, data source documentation              |
+| `data/`     | Raw and processed files (not committed)                |
+| `db/`       | SQL schema, queries, load scripts                       |
+| `pipeline/` | Fetch, clean, export scripts                            |
+| `server/`   | Node/Express API                                        |
+| `client/`   | React app                                               |
 
-## Milestone Status
+## Milestone status
 
-- **M1** ✅ Project proposal
-- **M2** ✅ ER diagram & initial design
-- **M3** 🔄 In progress — schema, data cleaning, complex queries
-- **M4** ⏳ Pending — backend API implementation
-- **M5** ⏳ Pending — frontend & final demo
+- **M1** — Project proposal
+- **M2** — ER diagram & initial design
+- **M3** — Schema, data cleaning, complex queries (in progress)
+- **M4** — Backend API
+- **M5** — Frontend & final demo

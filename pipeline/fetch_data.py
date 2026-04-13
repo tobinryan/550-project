@@ -1,146 +1,145 @@
-"""Pull down raw files for the pipeline: IMDb dumps, MovieLens zip, TMDB off Kaggle.
+"""Download CIS 5500 raw data from Kaggle (matches the project proposal).
 
-IMDb and MovieLens are straight HTTP. TMDB needs the kaggle CLI + API key in
-~/.kaggle/kaggle.json
+Dataset 1 — The Movies Dataset (MovieLens + TMDB):
+  https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset
+Dataset 2 — IMDb Actors and Movies:
+  https://www.kaggle.com/datasets/rishabjadhav/imdb-actors-and-movies
+
+Uses `kagglehub`when available; falls back to the `kaggle` Python API. Copy extracted files into `data/raw/` so the
+cleaning pipeline does not depend on the kagglehub cache path.
+
+Auth: place API credentials in ``~/.kaggle/kaggle.json`` (Kaggle account → API).
 """
 
-import gzip
-import io
-import os
+from __future__ import annotations
+
 import shutil
-import zipfile
+import sys
 from pathlib import Path
-from urllib.request import urlretrieve, urlopen
 
-RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
+_PIPELINE_DIR = Path(__file__).resolve().parent
+if str(_PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(_PIPELINE_DIR))
 
-# IMDb: gzipped TSVs, we gunzip next to the download
+from paths import IMDB_KAGGLE_DIR, MOVIES_DATASET_DIR, RAW_DIR
 
-IMDB_BASE_URL = "https://datasets.imdbws.com"
-IMDB_FILES = [
-    "title.basics.tsv.gz",
-    "title.ratings.tsv.gz",
-    "name.basics.tsv.gz",
-]
+# Slugs must match the proposal / notebook
+KAGGLE_MOVIES_DATASET = "rounakbanik/the-movies-dataset"
+KAGGLE_IMDB_ACTORS_DATASET = "rishabjadhav/imdb-actors-and-movies"
 
-
-def fetch_imdb(dest_dir: Path = RAW_DIR) -> list[Path]:
-    """Grab the three TSVs we care about; skip if the .tsv already exists."""
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    downloaded = []
-
-    for filename in IMDB_FILES:
-        gz_path = dest_dir / filename
-        tsv_path = dest_dir / filename.replace(".gz", "")
-
-        if tsv_path.exists():
-            print(f"  [skip] {tsv_path.name} already exists")
-            downloaded.append(tsv_path)
-            continue
-
-        print(f"  Downloading {filename} ...")
-        url = f"{IMDB_BASE_URL}/{filename}"
-        urlretrieve(url, gz_path)
-
-        print(f"  Decompressing to {tsv_path.name} ...")
-        with gzip.open(gz_path, "rb") as f_in, open(tsv_path, "wb") as f_out:
-            shutil.copyfileobj(f_in, f_out)
-        gz_path.unlink()
-
-        downloaded.append(tsv_path)
-
-    return downloaded
-
-
-# MovieLens (folder is ml latest on disk)
-
-MOVIELENS_URL = "https://files.grouplens.org/datasets/movielens/ml-latest.zip"
-
-
-def fetch_movielens(dest_dir: Path = RAW_DIR) -> Path:
-    """Unzip into the ml latest folder under data/raw; noop if that folder is already there."""
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    extracted_dir = dest_dir / "ml-latest"
-
-    if extracted_dir.exists():
-        print(f"  [skip] {extracted_dir} already exists")
-        return extracted_dir
-
-    zip_path = dest_dir / "ml-latest.zip"
-    print("  Downloading ml-latest.zip ...")
-    urlretrieve(MOVIELENS_URL, zip_path)
-
-    print("  Extracting ...")
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        zf.extractall(dest_dir)
-    zip_path.unlink()
-
-    return extracted_dir
-
-
-# TMDB via Kaggle ("The Movies Dataset")
-
-KAGGLE_DATASET = "rounakbanik/the-movies-dataset"
-TMDB_EXPECTED_FILES = [
+# Minimum files the pipeline expects after fetch
+MOVIES_EXPECTED = (
     "movies_metadata.csv",
     "credits.csv",
-    "keywords.csv",
-]
+    "ratings.csv",
+    "links.csv",
+)
+IMDB_EXPECTED = ("titles.csv", "names.csv", "combined.csv")
 
 
-def fetch_tmdb_kaggle(dest_dir: Path = RAW_DIR) -> Path:
-    """kaggle API writes under data/raw/tmdb. Prints hints if import or auth fails."""
-    tmdb_dir = dest_dir / "tmdb"
-    tmdb_dir.mkdir(parents=True, exist_ok=True)
+def _copy_dataset_files(src_dir: Path, dest_dir: Path) -> None:
+    """Copy every file from an extracted Kaggle folder into dest_dir."""
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    for item in src_dir.iterdir():
+        if item.is_file():
+            shutil.copy2(item, dest_dir / item.name)
 
-    already_have = [f for f in TMDB_EXPECTED_FILES if (tmdb_dir / f).exists()]
-    if len(already_have) == len(TMDB_EXPECTED_FILES):
-        print(f"  [skip] All TMDB files already in {tmdb_dir}")
-        return tmdb_dir
 
+def _have_files(dir_path: Path, names: tuple[str, ...]) -> bool:
+    return all((dir_path / n).is_file() for n in names)
+
+
+def _download_via_kagglehub(slug: str) -> Path | None:
+    try:
+        import kagglehub
+    except ImportError:
+        return None
+    print(f"  Using kagglehub to download {slug} ...")
+    return Path(kagglehub.dataset_download(slug))
+
+
+def _download_via_kaggle_api(slug: str, dest_dir: Path) -> bool:
     try:
         from kaggle.api.kaggle_api_extended import KaggleApi
-
+    except ImportError:
+        print("  [error] Install kaggle: pip install kaggle")
+        return False
+    try:
         api = KaggleApi()
         api.authenticate()
-        print(f"  Downloading Kaggle dataset: {KAGGLE_DATASET} ...")
-        api.dataset_download_files(KAGGLE_DATASET, path=tmdb_dir, unzip=True)
-    except ImportError:
-        print(
-            "  [error] kaggle package not installed. Run: pip install kaggle\n"
-            "  Alternatively, download manually from:\n"
-            "    https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset\n"
-            f"  and place the CSV files in {tmdb_dir}"
-        )
+        print(f"  Using Kaggle API to download {slug} ...")
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        api.dataset_download_files(slug, path=dest_dir, unzip=True)
+        return True
     except Exception as e:
-        print(f"  [error] Kaggle download failed: {e}")
+        print(f"  [error] Kaggle API download failed: {e}")
+        return False
+
+
+def fetch_movies_dataset(dest: Path = MOVIES_DATASET_DIR) -> Path:
+    """Dataset 1: TMDB metadata, credits, MovieLens ratings + links (same folder)."""
+    if _have_files(dest, MOVIES_EXPECTED):
+        print(f"  [skip] The Movies Dataset files already in {dest}")
+        return dest
+
+    src = _download_via_kagglehub(KAGGLE_MOVIES_DATASET)
+    if src is not None and src.is_dir():
+        _copy_dataset_files(src, dest)
+    elif not _download_via_kaggle_api(KAGGLE_MOVIES_DATASET, dest):
         print(
-            f"  Download manually and place CSV files in {tmdb_dir}"
+            "  Manual download:\n"
+            f"    https://www.kaggle.com/datasets/{KAGGLE_MOVIES_DATASET}\n"
+            f"  Unzip CSVs into: {dest}"
         )
 
-    return tmdb_dir
+    if not _have_files(dest, MOVIES_EXPECTED):
+        print(
+            f"  [warn] Expected files not all present under {dest}. "
+            "See MOVIES_EXPECTED in fetch_data.py."
+        )
+    return dest
 
 
-def fetch_all(dest_dir: Path = RAW_DIR) -> dict[str, Path | list[Path]]:
-    """IMDb + MovieLens + TMDB in one go."""
-    print("=== Fetching IMDb datasets ===")
-    imdb_paths = fetch_imdb(dest_dir)
+def fetch_imdb_actors_movies(dest: Path = IMDB_KAGGLE_DIR) -> Path:
+    """Dataset 2: titles.csv, names.csv, combined.csv (IMDb-style actor/movie tables)."""
+    if _have_files(dest, IMDB_EXPECTED):
+        print(f"  [skip] IMDb Kaggle files already in {dest}")
+        return dest
 
-    print("\n=== Fetching MovieLens dataset ===")
-    ml_path = fetch_movielens(dest_dir)
+    src = _download_via_kagglehub(KAGGLE_IMDB_ACTORS_DATASET)
+    if src is not None and src.is_dir():
+        _copy_dataset_files(src, dest)
+    elif not _download_via_kaggle_api(KAGGLE_IMDB_ACTORS_DATASET, dest):
+        print(
+            "  Manual download:\n"
+            f"    https://www.kaggle.com/datasets/{KAGGLE_IMDB_ACTORS_DATASET}\n"
+            f"  Unzip CSVs into: {dest}"
+        )
 
-    print("\n=== Fetching TMDB (Kaggle) dataset ===")
-    tmdb_path = fetch_tmdb_kaggle(dest_dir)
+    if not _have_files(dest, IMDB_EXPECTED):
+        print(
+            f"  [warn] Expected files not all present under {dest}. "
+            "See IMDB_EXPECTED in fetch_data.py."
+        )
+    return dest
+
+
+def fetch_all(raw_dir: Path = RAW_DIR) -> dict[str, Path]:
+    """Download both proposal datasets into data/raw/."""
+    print("=== Dataset 1: The Movies Dataset (Kaggle) ===")
+    movies_path = fetch_movies_dataset(raw_dir / "the-movies-dataset")
+
+    print("\n=== Dataset 2: IMDb Actors and Movies (Kaggle) ===")
+    imdb_path = fetch_imdb_actors_movies(raw_dir / "imdb-actors-movies")
 
     return {
-        "imdb": imdb_paths,
-        "movielens": ml_path,
-        "tmdb": tmdb_path,
+        "the_movies_dataset": movies_path,
+        "imdb_actors_movies": imdb_path,
     }
 
 
 if __name__ == "__main__":
-    paths = fetch_all()
-    print("\nDone. Downloaded to:")
-    for source, p in paths.items():
-        print(f"  {source}: {p}")
+    out = fetch_all()
+    print("\nDone. Raw data directories:")
+    for key, p in out.items():
+        print(f"  {key}: {p}")

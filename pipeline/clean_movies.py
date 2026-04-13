@@ -1,17 +1,24 @@
-"""Merge TMDB movie metadata with IMDb basics + ratings.
+"""Merge TMDB movie metadata with IMDb title basics (+ optional IMDb ratings).
 
-Pulls from data/raw/tmdb/movies_metadata.csv, title.basics.tsv, and
-title.ratings.tsv. Spits out movies (imdb_id as key), genre + company
-lookup tables, and the junction tables to join them.
+Pulls from ``data/raw/the-movies-dataset`` (Kaggle *The Movies Dataset*) and
+``data/raw/imdb-actors-movies`` (Kaggle *IMDb Actors and Movies*: ``titles.csv``).
+Optional ``title.ratings.tsv`` in the IMDb folder is merged when present; the
+Kaggle IMDb bundle does not ship aggregate ratings, so TMDB scores are primary.
+
+Spits out movies (imdb_id as key), genre + company lookup tables, and junctions.
 """
 
 import ast
-import json
+import sys
 from pathlib import Path
 
 import pandas as pd
 
-RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
+_PIPELINE_DIR = Path(__file__).resolve().parent
+if str(_PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(_PIPELINE_DIR))
+
+from paths import IMDB_KAGGLE_DIR, MOVIES_DATASET_DIR
 
 
 # helpers
@@ -39,12 +46,13 @@ def _coerce_int(series: pd.Series) -> pd.Series:
 def load_tmdb_metadata(path: Path | None = None) -> pd.DataFrame:
     """movies_metadata.csv: tmdb_id, imdb_id, money fields, genres/companies as parsed lists."""
     if path is None:
-        path = RAW_DIR / "tmdb" / "movies_metadata.csv"
+        path = MOVIES_DATASET_DIR / "movies_metadata.csv"
 
+    # ``adult`` has malformed values in the public dump; keep as string until merge.
     df = pd.read_csv(
         path,
         low_memory=False,
-        dtype={"imdb_id": str},
+        dtype={"imdb_id": str, "adult": str},
     )
 
     # id is supposed to be numeric; sometimes it isn't; drop those rows
@@ -78,11 +86,14 @@ def load_tmdb_metadata(path: Path | None = None) -> pd.DataFrame:
 # IMDb
 
 def load_imdb_basics(path: Path | None = None) -> pd.DataFrame:
-    """title.basics: titles, years, runtime, genres split into a list."""
+    """IMDb title basics (``titles.csv`` from Dataset 2 or legacy ``title.basics.tsv``)."""
     if path is None:
-        path = RAW_DIR / "title.basics.tsv"
+        path = IMDB_KAGGLE_DIR / "titles.csv"
 
-    df = pd.read_csv(path, sep="\t", low_memory=False, na_values="\\N")
+    if path.suffix.lower() == ".tsv":
+        df = pd.read_csv(path, sep="\t", low_memory=False, na_values="\\N")
+    else:
+        df = pd.read_csv(path, low_memory=False, na_values="\\N")
 
     # movies + made for TV movies; drop shorts, etc.
     df = df[df["titleType"].isin(["movie", "tvMovie"])].copy()
@@ -100,7 +111,17 @@ def load_imdb_basics(path: Path | None = None) -> pd.DataFrame:
         inplace=True,
     )
 
-    df["is_adult"] = df["is_adult"].astype("boolean")
+    # Kaggle CSV uses 0/1; TSV uses boolean-ish
+    if df["is_adult"].dtype != "boolean":
+        df["is_adult"] = df["is_adult"].map(
+            lambda x: True
+            if x is True or x == 1 or x == "1"
+            else False
+            if x is False or x == 0 or x == "0"
+            else pd.NA
+        ).astype("boolean")
+    else:
+        df["is_adult"] = df["is_adult"].astype("boolean")
     df["start_year"] = _coerce_int(df["start_year"])
     df["end_year"] = _coerce_int(df["end_year"])
     df["runtime_minutes"] = _coerce_int(df["runtime_minutes"])
@@ -118,9 +139,14 @@ def load_imdb_basics(path: Path | None = None) -> pd.DataFrame:
 
 
 def load_imdb_ratings(path: Path | None = None) -> pd.DataFrame:
-    """title.ratings: aggregate score + vote count per title."""
+    """title.ratings: aggregate score + vote count per title (optional)."""
     if path is None:
-        path = RAW_DIR / "title.ratings.tsv"
+        path = IMDB_KAGGLE_DIR / "title.ratings.tsv"
+
+    if not path.is_file():
+        return pd.DataFrame(
+            columns=["imdb_id", "imdb_avg_rating", "imdb_num_votes"]
+        )
 
     df = pd.read_csv(path, sep="\t", na_values="\\N")
     df.rename(

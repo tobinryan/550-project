@@ -1,15 +1,19 @@
 """MovieLens per user ratings, joined through links.csv so movie_id is IMDb.
 
-Aggregate IMDb and TMDB scores live on the movies table from clean_movies; this is
-just the 0.5 to 5 stars from the ml latest export. Output: movie_id (tt...), user_id,
-rating, timestamp.
+Ratings and links come from *The Movies Dataset* (same bundle as TMDB CSVs), not a
+separate ``ml-latest`` download. Output: movie_id (tt...), user_id, rating, timestamp.
 """
 
+import sys
 from pathlib import Path
 
 import pandas as pd
 
-RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
+_PIPELINE_DIR = Path(__file__).resolve().parent
+if str(_PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(_PIPELINE_DIR))
+
+from paths import MOVIES_DATASET_DIR
 
 
 def _coerce_int(series: pd.Series) -> pd.Series:
@@ -21,7 +25,7 @@ def load_movielens_ratings(
 ) -> pd.DataFrame:
     """Raw ratings: internal ml movie id, user, stars, unix time."""
     if ratings_path is None:
-        ratings_path = RAW_DIR / "ml-latest" / "ratings.csv"
+        ratings_path = MOVIES_DATASET_DIR / "ratings.csv"
 
     df = pd.read_csv(ratings_path)
     df.rename(
@@ -42,7 +46,7 @@ def load_movielens_links(
 ) -> pd.DataFrame:
     """Bridge file: MovieLens id to numeric IMDb id we turn into tt... strings."""
     if links_path is None:
-        links_path = RAW_DIR / "ml-latest" / "links.csv"
+        links_path = MOVIES_DATASET_DIR / "links.csv"
 
     df = pd.read_csv(links_path)
     df.rename(

@@ -1,17 +1,23 @@
 """Cast and crew from TMDB credits, optionally glued to IMDb names for birth and death years.
 
-credits.csv has nested JSON for cast and crew per tmdb movie id. name.basics
-has IMDb person ids; we only match on exact name (first hit wins), which is
-brittle but cheap. Pass tmdb_to_imdb_map from entity_resolution if you want
-movie_id as imdb_id instead of raw TMDB ids.
+credits.csv has nested JSON for cast and crew per tmdb movie id. ``names.csv``
+from the Kaggle IMDb Actors and Movies dataset supplies birth/death years; we
+match on exact name (first hit wins), which is brittle but cheap. Pass
+tmdb_to_imdb_map from entity_resolution if you want movie_id as imdb_id instead
+of raw TMDB ids.
 """
 
 import ast
+import sys
 from pathlib import Path
 
 import pandas as pd
 
-RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
+_PIPELINE_DIR = Path(__file__).resolve().parent
+if str(_PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(_PIPELINE_DIR))
+
+from paths import IMDB_KAGGLE_DIR, MOVIES_DATASET_DIR
 
 
 def _safe_parse_json_col(val):
@@ -37,7 +43,7 @@ GENDER_MAP = {0: None, 1: "Female", 2: "Male", 3: "Non-binary"}
 def load_tmdb_credits(path: Path | None = None) -> pd.DataFrame:
     """Flatten cast + crew to one row per (movie, person, job)."""
     if path is None:
-        path = RAW_DIR / "tmdb" / "credits.csv"
+        path = MOVIES_DATASET_DIR / "credits.csv"
 
     df = pd.read_csv(path, dtype={"id": int})
 
@@ -76,11 +82,14 @@ def load_tmdb_credits(path: Path | None = None) -> pd.DataFrame:
 # IMDb names
 
 def load_imdb_people(path: Path | None = None) -> pd.DataFrame:
-    """name.basics: mostly here for birth and death years."""
+    """IMDb names: ``names.csv`` from Dataset 2 or legacy ``name.basics.tsv``."""
     if path is None:
-        path = RAW_DIR / "name.basics.tsv"
+        path = IMDB_KAGGLE_DIR / "names.csv"
 
-    df = pd.read_csv(path, sep="\t", low_memory=False, na_values="\\N")
+    if path.suffix.lower() == ".tsv":
+        df = pd.read_csv(path, sep="\t", low_memory=False, na_values="\\N")
+    else:
+        df = pd.read_csv(path, low_memory=False, na_values="\\N")
 
     df.rename(
         columns={

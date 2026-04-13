@@ -2,6 +2,8 @@
 
 Queries use **`$1`, `$2`, …** (PostgreSQL positional params). The API binds them from request input. To try in `psql`: `PREPARE q AS` + paste the `SELECT`, then `EXECUTE q('tt0114709');` (adjust types/arity per query).
 
+These support the CIS 5500 proposal flows (movie search, user ratings, cast lists) alongside the [complex queries](../complex/README.md).
+
 | File | Purpose |
 |------|---------|
 | [01_movie_by_imdb.sql](01_movie_by_imdb.sql) | Fetch one movie by `imdb_id`. |
