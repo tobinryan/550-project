@@ -1,6 +1,6 @@
 # Movie analytics & discovery (CIS 5500)
 
-A movie analytics and discovery platform for exploring relationships between movies, actors, and audience ratings. The app integrates metadata and user ratings from **The Movies Dataset** (MovieLens + TMDB) with actor information from the **IMDb Actors and Movies** Kaggle dataset so users can search movies and actors, inspect cast and financials, and use analytics dashboards for trends over time.
+A movie analytics and discovery platform for exploring relationships between movies, actors, and audience ratings. The app integrates metadata and user ratings from **The Movies Dataset** and **IMDb Actors and Movies** datasets so users can search movies and actors, inspect cast and financials, and use analytics dashboards for trends over time.
 
 **Course:** CIS 5500 — University of Pennsylvania
 
@@ -39,10 +39,3 @@ A movie analytics and discovery platform for exploring relationships between mov
 | `server/`   | Node/Express API                                        |
 | `client/`   | React app                                               |
 
-## Milestone status
-
-- **M1** — Project proposal
-- **M2** — ER diagram & initial design
-- **M3** — Schema, data cleaning, complex queries (in progress)
-- **M4** — Backend API
-- **M5** — Frontend & final demo
