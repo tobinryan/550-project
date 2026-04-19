@@ -4,6 +4,8 @@ const cors = require("cors");
 const { pool } = require("./db");
 const actorsRouter = require("./routes/actors");
 const analyticsRouter = require("./routes/analytics");
+const moviesRouter = require("./routes/movies");
+const ratingsRouter = require("./routes/ratings");
 
 const app = express();
 const port = Number.parseInt(process.env.PORT || "3001", 10);
@@ -17,6 +19,8 @@ app.get("/health", (_req, res) => {
 
 app.use("/api/actors", actorsRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/movies", moviesRouter);
+app.use("/api/ratings", ratingsRouter);
 
 app.listen(port, async () => {
   console.log(`API listening on http://localhost:${port}`);
