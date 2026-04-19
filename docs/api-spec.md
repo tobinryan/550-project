@@ -7,22 +7,6 @@ All error responses return `{ "error": "<message>" }`.
 
 ---
 
-## Health
-
-### `GET /health`
-
-Returns server liveness status.
-
-**Request params:** none
-
-**Response** `200`
-
-| Field | Type    | Description           |
-|-------|---------|-----------------------|
-| `ok`  | boolean | Always `true`         |
-
----
-
 ## Movies
 
 ### `GET /api/movies/search`
