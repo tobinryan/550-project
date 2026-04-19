@@ -1,43 +1,37 @@
--- $1 - The genre to filter movies by 
--- $2 - The start of the year range
--- $3 - The end of the year range
-
-WITH movie_ratings AS (
-  SELECT
-    m.imdb_id,
-    m.primary_title,
-    m.start_year,
-    m.original_language,
-    g.genre,
-    AVG(r.rating) AS avg_rating,
-    COUNT(DISTINCT r.user_id) AS num_raters
-  FROM movies m
-  JOIN movie_genres g ON m.imdb_id = g.movie_id
-  LEFT JOIN ratings r ON m.imdb_id = r.movie_id
-  WHERE g.genre = $1
-    AND m.start_year BETWEEN $2 AND $3
-  GROUP BY m.imdb_id, m.primary_title, m.start_year, m.original_language, g.genre
+-- $1 genre, $2 start_year, $3 end_year — TMDB vote_average / vote_count (not ratings).
+WITH base AS (
+	SELECT
+		m.imdb_id,
+		COALESCE(NULLIF(TRIM(m.primary_title), ''), NULLIF(TRIM(BOTH FROM m.original_title), ''), m.imdb_id) AS primary_title,
+		m.start_year,
+		m.original_language,
+		g.genre,
+		m.vote_average AS avg_rating,
+		m.vote_count::bigint AS num_raters
+	FROM movies m
+	JOIN movie_genres g ON m.imdb_id = g.movie_id
+	WHERE g.genre = $1
+		AND m.start_year BETWEEN $2 AND $3
 ),
 movie_top_company AS (
-  SELECT
-    m.imdb_id,
-    pc.name AS top_company
-  FROM movies m
-  LEFT JOIN movies_production_companies mpc ON m.imdb_id = mpc.movie_id
-  LEFT JOIN production_companies pc ON mpc.production_company = pc.id
-  WHERE m.imdb_id IN (SELECT imdb_id FROM movie_ratings)
-  -- Pick the first company alphabetically for each movie (if multiple)
-  QUALIFY ROW_NUMBER() OVER (PARTITION BY m.imdb_id ORDER BY pc.name) = 1
+	SELECT DISTINCT ON (m.imdb_id)
+		m.imdb_id,
+		pc.name AS top_company
+	FROM movies m
+	LEFT JOIN movies_production_companies mpc ON m.imdb_id = mpc.movie_id
+	LEFT JOIN production_companies pc ON mpc.production_company = pc.id
+	WHERE m.imdb_id IN (SELECT imdb_id FROM base)
+	ORDER BY m.imdb_id, pc.name NULLS LAST
 )
 SELECT
-  mr.primary_title,
-  mr.start_year,
-  mr.original_language,
-  mr.genre,
-  mtc.top_company,
-  mr.avg_rating,
-  mr.num_raters,
-  RANK() OVER (ORDER BY mr.avg_rating DESC NULLS LAST, mr.num_raters DESC) AS genre_rank
-FROM movie_ratings mr
-LEFT JOIN movie_top_company mtc ON mr.imdb_id = mtc.imdb_id
-ORDER BY genre_rank, mr.start_year DESC;
+	b.primary_title,
+	b.start_year,
+	b.original_language,
+	b.genre,
+	mtc.top_company,
+	b.avg_rating,
+	b.num_raters,
+	RANK() OVER (ORDER BY b.avg_rating DESC NULLS LAST, b.num_raters DESC) AS genre_rank
+FROM base b
+LEFT JOIN movie_top_company mtc ON b.imdb_id = mtc.imdb_id
+ORDER BY genre_rank, b.start_year DESC NULLS LAST;
