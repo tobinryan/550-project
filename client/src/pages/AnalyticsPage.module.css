@@ -1,0 +1,55 @@
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 0.25rem;
+}
+
+.header p {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #1e293b;
+  margin-bottom: 2rem;
+}
+
+.tab {
+  padding: 0.6rem 1.1rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.15s;
+  margin-bottom: -2px;
+  border-radius: 4px 4px 0 0;
+}
+
+.tab:hover {
+  color: #e2e8f0;
+}
+
+.tabActive {
+  color: #f59e0b;
+  border-bottom-color: #f59e0b;
+  font-weight: 600;
+}
+
+.content {
+  min-height: 400px;
+}

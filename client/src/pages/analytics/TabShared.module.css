@@ -1,0 +1,164 @@
+.form {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.select {
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  min-width: 160px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #f59e0b;
+}
+
+.numInput {
+  width: 90px;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.numInput:focus {
+  outline: none;
+  border-color: #f59e0b;
+}
+
+.btn {
+  padding: 0.55rem 1.25rem;
+  border-radius: 6px;
+  border: none;
+  background: #f59e0b;
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  align-self: flex-end;
+}
+
+.btn:hover:not(:disabled) { background: #fbbf24; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.hint {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.chartWrap {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.chartTitle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 2px solid #1e293b;
+  color: #64748b;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #1e293b;
+  color: #cbd5e1;
+}
+
+.clickRow {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.clickRow:hover td {
+  background: #1e293b;
+}
+
+.rank {
+  color: #f59e0b;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.name {
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.company {
+  color: #64748b;
+  font-size: 0.85rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lang {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.actorLink {
+  background: none;
+  border: none;
+  color: #93c5fd;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.actorLink:hover {
+  color: #60a5fa;
+}
