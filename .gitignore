@@ -8,4 +8,5 @@ data/processed/*
 *.csv
 dist/
 build/
+coverage/
 __pycache__/
